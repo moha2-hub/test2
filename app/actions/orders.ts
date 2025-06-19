@@ -103,6 +103,14 @@ export async function createOrder(formData: FormData) {
   const castleId = Number(formData.get("castleId"))
   const quantity = Number(formData.get("quantity")) || 1 // Default 1 if not provided
   const offerId = formData.get("offerId") ? Number(formData.get("offerId")) : null
+
+  // Fetch product before using it
+  const productRes = await query("SELECT * FROM products WHERE id = $1 AND active = true LIMIT 1", [productId])
+  if (productRes.length === 0) {
+    return { success: false, message: "Product not found or inactive" }
+  }
+  const product = productRes[0]
+
   let totalPrice = product.price * quantity
 
   // If an offer is selected, use its price as the total price
@@ -120,15 +128,6 @@ export async function createOrder(formData: FormData) {
   try {
     await query("BEGIN")
 
-    // Fetch product and check active
-    const productRes = await query("SELECT * FROM products WHERE id = $1 AND active = true LIMIT 1", [productId])
-    if (productRes.length === 0) {
-      await query("ROLLBACK")
-      return { success: false, message: "Product not found or inactive" }
-    }
-
-    const product = productRes[0]
-
     // Check castle ownership
     const castleRes = await query("SELECT * FROM castles WHERE id = $1 AND user_id = $2 LIMIT 1", [castleId, user.id])
     if (castleRes.length === 0) {
@@ -145,14 +144,14 @@ export async function createOrder(formData: FormData) {
     // Deduct points and add reserved points
     await query(
       `UPDATE users SET points = points - $1, reserved_points = reserved_points + $1 WHERE id = $2`,
-      [totalPrice, user.id]
+      [Math.round(totalPrice), user.id]
     )
 
     // Insert order with quantity and total amount
     const insertRes = await query(
       `INSERT INTO orders (customer_id, product_id, castle_id, status, amount, quantity, total_price, created_at, updated_at)
        VALUES ($1, $2, $3, 'pending', $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id`,
-      [user.id, productId, castleId, totalPrice, quantity, totalPrice]
+      [user.id, productId, castleId, Math.round(totalPrice), quantity, Math.round(totalPrice)]
     )
 
     const orderId = insertRes[0].id
