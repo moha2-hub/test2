@@ -8,6 +8,17 @@ import { getCurrentUser } from "@/app/actions/auth"
 import { ShoppingBag, CheckCircle, DollarSign, Clock } from "lucide-react"
 import Link from "next/link"
 
+// Add a type for orders
+interface SellerOrder {
+  id: number;
+  status: string;
+  amount: number;
+  created_at: string;
+  product: { name: string; price: number };
+  castle: { name: string; login_credentials?: string; igg_id?: string };
+  customer?: { username: string };
+}
+
 export function SellerDashboard() {
   const [stats, setStats] = useState({
     points: 0,
@@ -15,8 +26,8 @@ export function SellerDashboard() {
     completedOrders: 0,
     totalEarned: 0,
   })
-  const [recentOrders, setRecentOrders] = useState([])
-  const [availableOrders, setAvailableOrders] = useState([])
+  const [recentOrders, setRecentOrders] = useState<SellerOrder[]>([])
+  const [availableOrders, setAvailableOrders] = useState<SellerOrder[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -177,6 +188,9 @@ export function SellerDashboard() {
                     </div>
                     <p className="text-sm">
                       {order.product.name} for {order.castle.name}
+                      {order.castle.igg_id && (
+                        <span className="ml-2 text-xs text-blue-600">IGG ID: {order.castle.igg_id}</span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
                   </div>
