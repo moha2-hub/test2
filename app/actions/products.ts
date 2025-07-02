@@ -1,3 +1,9 @@
+"use server"
+
+import { query } from "@/lib/db"
+import type { Product } from "@/types/database"
+import { getCurrentUser } from "./auth"
+
 export async function deleteProduct(id: number) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
@@ -11,11 +17,6 @@ export async function deleteProduct(id: number) {
     return { success: false, message: "Failed to delete product" };
   }
 }
-"use server"
-
-import { query } from "@/lib/db"
-import type { Product } from "@/types/database"
-import { getCurrentUser } from "./auth"
 
 export async function getProducts(activeOnly = true): Promise<Product[]> {
   try {
@@ -41,7 +42,7 @@ export async function createProduct(formData: FormData) {
 
   const name = formData.get("name") as string
   const price = Number.parseInt(formData.get("price") as string)
-  const category = formData.get("productType") as string // match client key
+  const category = formData.get("productType") as string
   const imageFile = formData.get("image") as File | null
   let imageUrl = ""
   if (imageFile) {
@@ -49,8 +50,9 @@ export async function createProduct(formData: FormData) {
     const buffer = Buffer.from(arrayBuffer);
     imageUrl = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
   }
-  const description = "" // Add description if needed
-  const type = "" // Add type if needed
+
+  const description = ""
+  const type = ""
 
   try {
     const result = await query<{ id: number }>(
@@ -72,12 +74,11 @@ export async function updateProduct(formData: FormData) {
   }
 
   const id = Number.parseInt(formData.get("id") as string)
-  // Fetch current product data
   const current = await getProductById(id)
   if (!current) {
     return { success: false, message: "Product not found" }
   }
-  // Use formData value if present, otherwise keep current value
+
   const name = formData.get("name")?.toString().trim() || current.name
   const description = formData.get("description")?.toString().trim() || current.description
   const price = formData.get("price") ? parseFloat(formData.get("price") as string) : current.price
@@ -86,7 +87,6 @@ export async function updateProduct(formData: FormData) {
   const category = formData.get("category")?.toString().trim() || current.category
   const type = formData.get("type")?.toString().trim() || current.type
 
-  // Debug log
   console.log("Updating product:", { id, name, description, price, imageUrl, active, category, type })
 
   if (isNaN(price) || price < 0) {
