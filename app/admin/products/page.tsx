@@ -12,7 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Plus, Edit, Package, Bot, Zap, Calendar, Percent } from "lucide-react"
 import Link from "next/link"
-import { getProducts, updateProduct } from "@/app/actions/products"
+import { getProducts, updateProduct, deleteProduct } from "@/app/actions/products"
+  const handleDeleteProduct = async (productId: number) => {
+    if (!window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) return;
+    setIsLoading(true);
+    const result = await deleteProduct(productId);
+    if (result.success) {
+      setProducts(products.filter((p) => p.id !== productId));
+    } else {
+      alert(result.message || "Failed to delete product.");
+    }
+    setIsLoading(false);
+  };
 import { createOffer, getOffersByProduct, deleteOffer } from "@/app/actions/products-new"
 import { useTranslation } from "react-i18next"
 // Use a single Offer type from the backend for consistency
@@ -415,12 +426,17 @@ export default function AdminProductsPage() {
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t">
                         <Badge variant="outline">{t(product.category)}</Badge>
-                        <Link href={`/admin/products/${product.id}/edit`}>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="h-4 w-4 mr-1" />
-                            {t("editDetails")}
+                        <div className="flex gap-2">
+                          <Link href={`/admin/products/${product.id}/edit`}>
+                            <Button size="sm" variant="ghost">
+                              <Edit className="h-4 w-4 mr-1" />
+                              {t("editDetails")}
+                            </Button>
+                          </Link>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteProduct(product.id)}>
+                            {t("delete")}
                           </Button>
-                        </Link>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
