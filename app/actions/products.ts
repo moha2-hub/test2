@@ -1,3 +1,16 @@
+export async function deleteProduct(id: number) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "admin") {
+    return { success: false, message: "Unauthorized" };
+  }
+  try {
+    await query("DELETE FROM products WHERE id = $1", [id]);
+    return { success: true };
+  } catch (error) {
+    console.error("Delete product error:", error);
+    return { success: false, message: "Failed to delete product" };
+  }
+}
 "use server"
 
 import { query } from "@/lib/db"
