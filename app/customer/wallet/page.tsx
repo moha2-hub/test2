@@ -157,7 +157,11 @@ export default function WalletPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge variant="outline">Pending</Badge>
+        return (
+          <Badge className="bg-yellow-100 text-yellow-600 border-yellow-400 flex items-center gap-1">
+            Pending <span className="text-yellow-600">?</span>
+          </Badge>
+        )
       case "completed":
         return <Badge variant="default">Completed</Badge>
       case "rejected":
@@ -183,12 +187,12 @@ export default function WalletPage() {
     }
   }
 
-  // Filter transactions to show paid, refund, and top_up (completed top-ups)
+  // Show all payments/refunds that are completed, and ALL top_up (pending or completed)
   const paidRefundedAndTopup = transactions.filter(
     (tx) =>
       (tx.type === "payment" && tx.status === "completed") ||
       (tx.type === "refund" && tx.status === "completed") ||
-      (tx.type === "top_up" && tx.status === "completed")
+      (tx.type === "top_up")
   )
 
   return (
