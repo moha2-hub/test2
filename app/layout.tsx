@@ -7,9 +7,9 @@ import ClientRoot from "@/components/ClientRoot"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MohStore - Multi-Role E-commerce Platform",
-  description: "A multi-role e-commerce platform with admin, seller, and customer dashboards",
-    generator: 'v0.dev'
+  title: "MohStore",
+  description: "Top up points easily, purchase in-game items, and manage your castles and orders.",
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
