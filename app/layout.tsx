@@ -7,7 +7,7 @@ import ClientRoot from "@/components/ClientRoot"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MohStore",
+  title: "MOH-STORE",
   description: "Top up points easily, purchase in-game items, and manage your castles and orders.",
   generator: 'v0.dev'
 }
