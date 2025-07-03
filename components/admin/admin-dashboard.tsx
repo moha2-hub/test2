@@ -4,9 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, Package, ShoppingCart, AlertTriangle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { query } from "@/lib/db"
+import { getFailedAttempts } from "@/lib/login-attempts"
 import { useTranslation } from "react-i18next"
 
-export function AdminDashboard() {
   const { t } = useTranslation("common");
   const [stats, setStats] = useState({
     products: 0,
@@ -15,7 +15,8 @@ export function AdminDashboard() {
     openReclamations: 0,
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [recentActivity, setRecentActivity] = useState([])
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [failedAttempts, setFailedAttempts] = useState<{ email: string; count: number; lockUntil: number }[]>([])
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -81,6 +82,9 @@ export function AdminDashboard() {
         `)
 
         setRecentActivity(activityData)
+
+        // Get failed login attempts
+        setFailedAttempts(getFailedAttempts())
       } catch (error) {
         console.error("Error fetching dashboard data:", error)
       } finally {
@@ -89,6 +93,9 @@ export function AdminDashboard() {
     }
 
     fetchDashboardData()
+    // Optionally poll every 10s
+    const interval = setInterval(() => setFailedAttempts(getFailedAttempts()), 10000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -97,132 +104,42 @@ export function AdminDashboard() {
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("totalProducts")}</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? "..." : stats.products}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("totalUsers")}</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? "..." : stats.users}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("pendingOrders")}</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? "..." : stats.pendingOrders}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("openReclamations")}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? "..." : stats.openReclamations}</div>
-          </CardContent>
-        </Card>
+        {/* ...existing code... */}
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("recentActivity")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-6 text-center text-muted-foreground">{t("loadingActivity")}</div>
-          ) : recentActivity.length > 0 ? (
-            <div className="space-y-4">
-              {recentActivity.map((item, index) => (
-                <div key={index} className="flex items-start">
-                  <div className="mr-4 mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
-                    {item.type === "transaction" ? (
-                      <AlertTriangle className="h-4 w-4" />
-                    ) : item.type === "order" ? (
-                      <ShoppingCart className="h-4 w-4" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
-                      {item.type === "transaction"
-                        ? t("newPointTopUpRequest")
-                        : item.type === "order"
-                        ? t("newOrderPlaced")
-                        : t("newReclamationFiled")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.type === "transaction"
-                        ? t("userRequestedPoints", { userId: item.user_id, amount: item.amount })
-                        : item.type === "order"
-                        ? t("orderPlaced", { id: item.id })
-                        : t("reclamationFiled", { id: item.id })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p>
-                  </div>
+      {/* Failed Login Attempts */}
+      {failedAttempts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">{t("failedLoginAttempts")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {failedAttempts.map((a) => (
+                <div key={a.email} className="flex flex-col border p-2 rounded bg-red-50">
+                  <span className="font-semibold">{a.email}</span>
+                  <span>{t("failedAttemptsCount", { count: a.count })}</span>
+                  <span>{t("lockedUntil", { seconds: Math.max(0, Math.ceil((a.lockUntil - Date.now()) / 1000)) })}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="py-6 text-center text-muted-foreground">{t("noRecentActivity")}</div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Activity */}
+      {/* ...existing code... */}
 
       {/* Pending Approvals */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("pendingApprovals")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="top-ups">
-            <TabsList className="mb-4">
-              <TabsTrigger value="top-ups">{t("pointTopUps")}</TabsTrigger>
-              <TabsTrigger value="reclamations">{t("reclamations")}</TabsTrigger>
-              <TabsTrigger value="sellers">{t("sellerApplications")}</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="top-ups">
-              <div className="py-6 text-center text-muted-foreground">
-                {t("visitTopUpsPage")}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="reclamations">
-              <div className="py-6 text-center text-muted-foreground">
-                {t("visitReclamationsPage")}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="sellers">
-              <div className="py-6 text-center text-muted-foreground">
-                {t("visitUsersPage")}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      {/* ...existing code... */}
     </div>
   )
 }
 
 // Add these keys to your translation files:
+// "failedLoginAttempts": "Failed Login Attempts",
+// "failedAttemptsCount": "Failed attempts: {{count}}",
+// "lockedUntil": "Locked for {{seconds}} seconds",
 // "adminDashboard": "Admin Dashboard",
 // "totalProducts": "Total Products",
 // "totalUsers": "Total Users",
