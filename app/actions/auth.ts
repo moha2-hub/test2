@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers"
 import { query } from "@/lib/db"
+import { recordLoginAttempt, isLocked } from "@/lib/login-attempts"
 
 // Separate type for login, which includes password_hash
 interface DBUser {
@@ -14,9 +15,14 @@ interface DBUser {
   password_hash: string
 }
 
-export async function login(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
+
+  // Check if locked
+  const lockedFor = isLocked(email);
+  if (lockedFor > 0) {
+    return { success: false, message: `Too many failed attempts. Try again in ${lockedFor} seconds.` };
+  }
 
   try {
     const users = await query<DBUser>(
@@ -28,17 +34,22 @@ export async function login(formData: FormData) {
     )
 
     if (users.length === 0) {
+      recordLoginAttempt(email, false);
       return { success: false, message: "User not found" }
     }
 
     const user = users[0]
 
     if (password !== user.password_hash) {
+      recordLoginAttempt(email, false);
       return { success: false, message: "Invalid password" }
     }
 
+    // Success: reset attempts
+    recordLoginAttempt(email, true);
+
     // Set cookies
-      const cookieStore = await cookies();
+    const cookieStore = await cookies();
     cookieStore.set("userId", user.id.toString(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
