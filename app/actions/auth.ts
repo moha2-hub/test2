@@ -5,18 +5,20 @@ import { query } from "@/lib/db"
 import { recordLoginAttempt, isLocked } from "@/lib/login-attempts"
 
 // Separate type for login, which includes password_hash
-interface DBUser {
-  id: number
-  username: string
-  email: string
-  role: string
-  points: number
-  reserved_points: number
-  password_hash: string
-}
 
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
+interface DBUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  points: number;
+  reserved_points: number;
+  password_hash: string;
+// ...existing code...
+
+export async function login(formData: FormData) {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
   // Check if locked
   const lockedFor = isLocked(email);
@@ -31,18 +33,18 @@ interface DBUser {
        WHERE email = $1 
        LIMIT 1`,
       [email]
-    )
+    );
 
     if (users.length === 0) {
       recordLoginAttempt(email, false);
-      return { success: false, message: "User not found" }
+      return { success: false, message: "User not found" };
     }
 
-    const user = users[0]
+    const user = users[0];
 
     if (password !== user.password_hash) {
       recordLoginAttempt(email, false);
-      return { success: false, message: "Invalid password" }
+      return { success: false, message: "Invalid password" };
     }
 
     // Success: reset attempts
@@ -55,14 +57,14 @@ interface DBUser {
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
-    })
+    });
 
     cookieStore.set("userRole", user.role, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
-    })
+    });
 
     return {
       success: true,
@@ -74,43 +76,42 @@ interface DBUser {
         points: user.points,
         reserved_points: user.reserved_points,
       },
-    }
+    };
   } catch (error) {
-    console.error("Login error:", error)
-    return { success: false, message: "An unexpected error occurred" }
+    console.error("Login error:", error);
+    return { success: false, message: "An unexpected error occurred" };
   }
 }
+}
 // This type matches what's returned from SELECT
-interface User {
-  id: number
-  username: string
-  email: string
-  role: string
-  points: number
-  reserved_points: number
+interface DBUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  points: number;
+  reserved_points: number;
+  password_hash: string;
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<DBUser | null> {
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("userId")?.value
-
+    const userId = cookieStore.get("userId")?.value;
     if (!userId) {
-      return null
+      return null;
     }
-
-    const users = await query<User>(
-      `SELECT id, username, email, role, points, reserved_points 
+    const users = await query<DBUser>(
+      `SELECT id, username, email, role, points, reserved_points, password_hash 
        FROM users 
        WHERE id = $1 
        LIMIT 1`,
       [Number.parseInt(userId)]
-    )
-
-    return users.length > 0 ? users[0] : null
+    );
+    return users.length > 0 ? users[0] : null;
   } catch (error) {
-    console.error("Get current user error:", error)
-    return null
+    console.error("Get current user error:", error);
+    return null;
   }
 }
 export async function register(formData: FormData) {
