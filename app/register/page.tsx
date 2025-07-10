@@ -25,7 +25,8 @@ export default function RegisterPage() {
       const result = await register(formData)
 
       if (result.success) {
-        // Redirect to login page with a success message
+        // Refresh the page before redirecting to login
+        router.refresh();
         router.push("/login?registered=true")
       } else {
         setError(result.message || "Registration failed")
