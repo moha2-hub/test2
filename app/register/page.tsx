@@ -25,8 +25,7 @@ export default function RegisterPage() {
       const result = await register(formData)
 
       if (result.success) {
-        // Refresh the page before redirecting to login
-        router.refresh();
+        // Redirect to login page with a success message
         router.push("/login?registered=true")
       } else {
         setError(result.message || "Registration failed")
@@ -84,12 +83,12 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="whatsapp" className="text-sm font-medium">
+              <Label htmlFor="whatsapp_number" className="text-sm font-medium">
                 {t("whatsapp")}
               </Label>
               <Input
-                id="whatsapp"
-                name="whatsapp"
+                id="whatsapp_number"
+                name="whatsapp_number"
                 type="tel"
                 placeholder={t("whatsappPlaceholder")}
                 className="h-11"
