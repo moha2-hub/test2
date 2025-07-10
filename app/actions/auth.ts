@@ -117,6 +117,7 @@ export async function register(formData: FormData) {
   const username = formData.get("username") as string
   const email = formData.get("email") as string
   const password = formData.get("password") as string
+  const whatsapp_number = formData.get("whatsapp_number") as string
 
   try {
     const existingUsers = await query(
@@ -132,10 +133,10 @@ export async function register(formData: FormData) {
     const passwordHash = password
 
     const result = await query(
-      `INSERT INTO users (username, email, password_hash, role, points, reserved_points)
-       VALUES ($1, $2, $3, 'customer', 0, 0)
+      `INSERT INTO users (username, email, password_hash, whatsapp_number, role, points, reserved_points)
+       VALUES ($1, $2, $3, $4, 'customer', 0, 0)
        RETURNING id`,
-      [username, email, passwordHash]
+      [username, email, passwordHash, whatsapp_number]
     )
 
     return { success: true, userId: result[0]?.id }
