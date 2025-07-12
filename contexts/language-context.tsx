@@ -21,19 +21,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return; // Guard for SSR
     const savedLanguage = localStorage.getItem("language") as Language | null;
+    let langToSet: Language = "ar";
     if (savedLanguage === "en" || savedLanguage === "ar") {
-      setLanguageState(savedLanguage);
-      setIsRTL(savedLanguage === "ar");
-      document.documentElement.dir = savedLanguage === "ar" ? "rtl" : "ltr";
-      document.documentElement.lang = savedLanguage;
-      i18n.changeLanguage(savedLanguage); // Ensure i18n is synced on mount
-    } else {
-      setLanguageState("ar");
-      setIsRTL(true);
-      document.documentElement.dir = "rtl";
-      document.documentElement.lang = "ar";
-      i18n.changeLanguage("ar"); // Default to Arabic
+      langToSet = savedLanguage;
     }
+    setLanguageState(langToSet);
+    setIsRTL(langToSet === "ar");
+    document.documentElement.dir = langToSet === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = langToSet;
+    i18n.changeLanguage(langToSet); // Ensure i18n is synced on mount
   }, []);
 
   // Sync language changes across tabs/windows
@@ -45,6 +41,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setIsRTL(e.newValue === "ar");
         document.documentElement.dir = e.newValue === "ar" ? "rtl" : "ltr";
         document.documentElement.lang = e.newValue;
+        i18n.changeLanguage(e.newValue); // Sync i18n on storage event
       }
     };
     window.addEventListener("storage", onStorage);
