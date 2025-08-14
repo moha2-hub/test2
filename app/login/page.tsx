@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { login } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,11 +13,11 @@ import Link from "next/link"
 export default function LoginPage() {
   const { t } = useTranslation("common");
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const registered = searchParams.get("registered") === "true"
+
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const searchParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "")
-  const registered = searchParams.get("registered") === "true"
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true)
