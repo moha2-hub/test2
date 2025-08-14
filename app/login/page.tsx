@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next"
 import Link from "next/link"
 
 export default function LoginPage() {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("common")
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered") === "true"
@@ -53,7 +53,13 @@ export default function LoginPage() {
           <CardTitle>{t("login")}</CardTitle>
           <CardDescription>{t("welcome")}</CardDescription>
         </CardHeader>
-        <form action={handleSubmit}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const formData = new FormData(e.currentTarget)
+            handleSubmit(formData)
+          }}
+        >
           <CardContent className="space-y-4">
             {registered && (
               <div className="text-green-600 text-sm mb-2">{t("registeredSuccess")}</div>
@@ -61,11 +67,25 @@ export default function LoginPage() {
             {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
             <div>
               <Label htmlFor="email">{t("email")}</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required disabled={isLoading} />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                disabled={isLoading}
+              />
             </div>
             <div>
               <Label htmlFor="password">{t("password")}</Label>
-              <Input id="password" name="password" type="password" autoComplete="current-password" required disabled={isLoading} />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                disabled={isLoading}
+              />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
@@ -73,11 +93,14 @@ export default function LoginPage() {
               {isLoading ? t("loading") : t("login")}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              {t("noAccount")} <Link href="/register" className="underline">{t("register")}</Link>
+              {t("noAccount")}{" "}
+              <Link href="/register" className="underline">
+                {t("register")}
+              </Link>
             </div>
           </CardFooter>
         </form>
       </Card>
     </div>
-  );
+  )
 }
