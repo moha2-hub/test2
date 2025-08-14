@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useSearchParams } from "next/navigation"
 import { login } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
@@ -16,34 +16,35 @@ export default function LoginPage() {
   const registered = searchParams.get("registered") === "true"
 
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   async function handleSubmit(formData: FormData) {
-    setIsLoading(true)
     setError(null)
-    try {
-      const result = await login(formData)
-      if (result.success) {
-        const role = result.user.role
-        // ✅ use hard redirect so cookie/session is loaded immediately
-        if (role === "admin") {
-          window.location.href = "/admin"
-        } else if (role === "customer") {
-          window.location.href = "/customer"
-        } else if (role === "seller") {
-          window.location.href = "/seller"
+
+    startTransition(async () => {
+      try {
+        const result = await login(formData)
+
+        if (result.success) {
+          const role = result.user.role
+          // ✅ force hard reload to apply cookies/session
+          if (role === "admin") {
+            window.location.href = "/admin"
+          } else if (role === "customer") {
+            window.location.href = "/customer"
+          } else if (role === "seller") {
+            window.location.href = "/seller"
+          } else {
+            window.location.href = "/"
+          }
         } else {
-          window.location.href = "/"
+          setError(result.message || t("loginFailed"))
         }
-      } else {
-        setError(result.message || t("loginFailed"))
+      } catch (err) {
+        setError(t("unexpectedError"))
+        console.error(err)
       }
-    } catch (err) {
-      setError(t("unexpectedError"))
-      console.error(err)
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
   return (
@@ -54,11 +55,7 @@ export default function LoginPage() {
           <CardDescription>{t("welcome")}</CardDescription>
         </CardHeader>
         <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const formData = new FormData(e.currentTarget)
-            handleSubmit(formData)
-          }}
+          action={handleSubmit}
         >
           <CardContent className="space-y-4">
             {registered && (
@@ -73,7 +70,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                disabled={isLoading}
+                disabled={isPending}
               />
             </div>
             <div>
@@ -84,13 +81,13 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                disabled={isLoading}
+                disabled={isPending}
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t("loading") : t("login")}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? t("loading") : t("login")}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               {t("noAccount")}{" "}
@@ -103,4 +100,4 @@ export default function LoginPage() {
       </Card>
     </div>
   )
-}
+                }
