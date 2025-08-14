@@ -7,7 +7,8 @@ import { query } from "@/lib/db"
 import { getFailedAttempts } from "@/lib/login-attempts"
 import { useTranslation } from "react-i18next"
 
-  const { t } = useTranslation("common");
+export default function AdminDashboard() {
+  const { t } = useTranslation("common")
   const [stats, setStats] = useState({
     products: 0,
     users: 0,
@@ -16,7 +17,9 @@ import { useTranslation } from "react-i18next"
   })
   const [isLoading, setIsLoading] = useState(false)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
-  const [failedAttempts, setFailedAttempts] = useState<{ email: string; count: number; lockUntil: number }[]>([])
+  const [failedAttempts, setFailedAttempts] = useState<
+    { email: string; count: number; lockUntil: number }[]
+  >([])
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -93,6 +96,7 @@ import { useTranslation } from "react-i18next"
     }
 
     fetchDashboardData()
+
     // Optionally poll every 10s
     const interval = setInterval(() => setFailedAttempts(getFailedAttempts()), 10000)
     return () => clearInterval(interval)
@@ -119,7 +123,11 @@ import { useTranslation } from "react-i18next"
                 <div key={a.email} className="flex flex-col border p-2 rounded bg-red-50">
                   <span className="font-semibold">{a.email}</span>
                   <span>{t("failedAttemptsCount", { count: a.count })}</span>
-                  <span>{t("lockedUntil", { seconds: Math.max(0, Math.ceil((a.lockUntil - Date.now()) / 1000)) })}</span>
+                  <span>
+                    {t("lockedUntil", {
+                      seconds: Math.max(0, Math.ceil((a.lockUntil - Date.now()) / 1000)),
+                    })}
+                  </span>
                 </div>
               ))}
             </div>
@@ -134,30 +142,4 @@ import { useTranslation } from "react-i18next"
       {/* ...existing code... */}
     </div>
   )
-}
-
-// Add these keys to your translation files:
-// "failedLoginAttempts": "Failed Login Attempts",
-// "failedAttemptsCount": "Failed attempts: {{count}}",
-// "lockedUntil": "Locked for {{seconds}} seconds",
-// "adminDashboard": "Admin Dashboard",
-// "totalProducts": "Total Products",
-// "totalUsers": "Total Users",
-// "pendingOrders": "Pending Orders",
-// "openReclamations": "Open Reclamations",
-// "recentActivity": "Recent Activity",
-// "loadingActivity": "Loading activity...",
-// "newPointTopUpRequest": "New point top-up request",
-// "newOrderPlaced": "New order placed",
-// "newReclamationFiled": "New reclamation filed",
-// "userRequestedPoints": "User ID {{userId}} requested {{amount}} points",
-// "orderPlaced": "Order #{{id}} was placed",
-// "reclamationFiled": "Reclamation #{{id}} was filed",
-// "noRecentActivity": "No recent activity",
-// "pendingApprovals": "Pending Approvals",
-// "pointTopUps": "Point Top-ups",
-// "reclamations": "Reclamations",
-// "sellerApplications": "Seller Applications",
-// "visitTopUpsPage": "Visit the Top-ups page to manage pending top-up requests",
-// "visitReclamationsPage": "Visit the Reclamations page to manage pending complaints",
-// "visitUsersPage": "Visit the Users page to manage user roles"
+        }
