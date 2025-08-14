@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { login } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +12,6 @@ import Link from "next/link"
 
 export default function LoginPage() {
   const { t } = useTranslation("common")
-  const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered") === "true"
 
@@ -26,14 +25,15 @@ export default function LoginPage() {
       const result = await login(formData)
       if (result.success) {
         const role = result.user.role
+        // ✅ use hard redirect so cookie/session is loaded immediately
         if (role === "admin") {
-          router.push("/admin")
+          window.location.href = "/admin"
         } else if (role === "customer") {
-          router.push("/customer")
+          window.location.href = "/customer"
         } else if (role === "seller") {
-          router.push("/seller")
+          window.location.href = "/seller"
         } else {
-          router.push("/")
+          window.location.href = "/"
         }
       } else {
         setError(result.message || t("loginFailed"))
