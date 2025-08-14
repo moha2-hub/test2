@@ -3,8 +3,9 @@
 import { cookies } from "next/headers"
 import { query } from "@/lib/db"
 import { recordLoginAttempt, isLocked } from "@/lib/login-attempts"
+import bcrypt from "bcrypt"
 
-// Type that matches your users table
+// Match your table
 interface DBUser {
   id: number;
   username: string;
@@ -12,6 +13,7 @@ interface DBUser {
   role: string;
   points: number;
   reserved_points: number;
+  whatsapp_number: string;
   password_hash: string;
 }
 
@@ -20,7 +22,6 @@ export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  // Check if account is locked
   const lockedFor = isLocked(email);
   if (lockedFor > 0) {
     return { success: false, message: `Too many failed attempts. Try again in ${lockedFor} seconds.` };
@@ -28,7 +29,7 @@ export async function login(formData: FormData) {
 
   try {
     const users = await query<DBUser>(
-      `SELECT id, username, email, role, points, reserved_points, password_hash 
+      `SELECT id, username, email, role, points, reserved_points, whatsapp_number, password_hash
        FROM users 
        WHERE email = $1 
        LIMIT 1`,
@@ -42,16 +43,15 @@ export async function login(formData: FormData) {
 
     const user = users[0];
 
-    // ⚠️ Replace with proper hashing (bcrypt, argon2, etc.)
-    if (password !== user.password_hash) {
+    // ✅ Compare hashed password
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    if (!validPassword) {
       recordLoginAttempt(email, false);
       return { success: false, message: "Invalid password" };
     }
 
-    // Success: reset attempts
     recordLoginAttempt(email, true);
 
-    // Set only userId in cookies (no role cookie!)
     const cookieStore = await cookies();
     cookieStore.set("userId", user.id.toString(), {
       httpOnly: true,
@@ -69,6 +69,7 @@ export async function login(formData: FormData) {
         role: user.role,
         points: user.points,
         reserved_points: user.reserved_points,
+        whatsapp_number: user.whatsapp_number,
       },
     };
   } catch (error) {
@@ -82,12 +83,10 @@ export async function getCurrentUser(): Promise<DBUser | null> {
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get("userId")?.value;
-    if (!userId) {
-      return null;
-    }
+    if (!userId) return null;
 
     const users = await query<DBUser>(
-      `SELECT id, username, email, role, points, reserved_points, password_hash 
+      `SELECT id, username, email, role, points, reserved_points, whatsapp_number, password_hash 
        FROM users 
        WHERE id = $1 
        LIMIT 1`,
@@ -113,13 +112,12 @@ export async function register(formData: FormData) {
       `SELECT id FROM users WHERE email = $1 OR username = $2 LIMIT 1`,
       [email, username]
     );
-
     if (existingUsers.length > 0) {
       return { success: false, message: "User already exists" };
     }
 
-    // ⚠️ In production, hash the password (bcrypt/argon2)
-    const passwordHash = password;
+    // ✅ Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await query(
       `INSERT INTO users (username, email, password_hash, whatsapp_number, role, points, reserved_points)
@@ -133,4 +131,4 @@ export async function register(formData: FormData) {
     console.error("Create user error:", error);
     return { success: false, message: "Failed to create user" };
   }
-}
+      }
