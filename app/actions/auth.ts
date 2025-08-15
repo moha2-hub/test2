@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { query } from "@/lib/db"
 import { recordLoginAttempt, isLocked } from "@/lib/login-attempts"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 
 // Match your table
 interface DBUser {
